@@ -8,34 +8,34 @@
 #define SLEEP_PIN  8
 #define RESET_PIN  9
 
-#define SPEED_LIMIT 40000        
+#define SPEED_LIMIT 40000
 
-
+// --- USER SETTINGS ---
 float TARGET_ANGLE = 180.0;
-float Kp = 30.0;
+float Kp = 35.0;
 float Ki = 0.015;
-float Kd = 0.09;
+float Kd = 0.1;
 
-// Encoder resolution
 const float CPR = 2400.0;
 
-// PID variables
 float prevError = 0;
 float integral = 0;
 unsigned long lastTime = 0;
 
-// Encoder counter
 volatile long encoderCounts = 0;
 volatile int lastEncoded = 0;
 
-// High-speed step pulse timing
-volatile unsigned long stepInterval = 2000;    // microseconds per step
+volatile unsigned long stepInterval = 2000;
 volatile unsigned long lastStepMicros = 0;
+bool motorEnabled = false;
 
 
+// -----------------------------------------------------
+//                  ENCODER ISR (UNO VERSION)
+// -----------------------------------------------------
 void updateEncoder() {
-  int MSB = (PINE & (1 << 4)) >> 4; 
-  int LSB = (PINE & (1 << 5)) >> 5; 
+  int MSB = (PIND & (1 << 2)) >> 2; 
+  int LSB = (PIND & (1 << 3)) >> 3; 
   int encoded = (MSB << 1) | LSB;
   int sum = (lastEncoded << 2) | encoded;
 
@@ -46,6 +46,9 @@ void updateEncoder() {
 }
 
 
+// -----------------------------------------------------
+//          ULTRA FAST STEPPER SPEED SETTER
+// -----------------------------------------------------
 void setMotorSpeed(float speed) {
 
   if (speed >= 0) digitalWrite(DIR_PIN, HIGH);
@@ -56,12 +59,28 @@ void setMotorSpeed(float speed) {
   if (speed < 1) speed = 1;
   if (speed > SPEED_LIMIT) speed = SPEED_LIMIT;
 
-  // Convert to time between pulses (microseconds)
   stepInterval = 1000000.0 / speed;
 }
 
+void enableDriver(bool state) {
+  if (state == motorEnabled) return; 
+  
+  if (state) {
+    digitalWrite(SLEEP_PIN, HIGH);
+    digitalWrite(RESET_PIN, HIGH);
+    delayMicroseconds(10); 
+    motorEnabled = true;
+  } else {
+    digitalWrite(SLEEP_PIN, LOW); 
+    digitalWrite(RESET_PIN, LOW);
+    motorEnabled = false;
+  }
+}
 
 
+// -----------------------------------------------------
+//                    SETUP
+// -----------------------------------------------------
 void setup() {
   Serial.begin(115200);
 
@@ -70,8 +89,8 @@ void setup() {
 
   pinMode(SLEEP_PIN, OUTPUT);
   pinMode(RESET_PIN, OUTPUT);
-  digitalWrite(SLEEP_PIN, HIGH);
-  digitalWrite(RESET_PIN, HIGH);
+  
+  enableDriver(false);
 
   pinMode(ENCODER_A, INPUT_PULLUP);
   pinMode(ENCODER_B, INPUT_PULLUP);
@@ -83,19 +102,40 @@ void setup() {
 }
 
 
+// -----------------------------------------------------
+//                    MAIN LOOP
+// -----------------------------------------------------
 void loop() {
 
-
+  // ---------------- PID timing ----------------
   unsigned long now = micros();
+  if (now == lastTime) return; 
+  
   float dt = (now - lastTime) / 1000000.0;
   lastTime = now;
 
-
+  // ---------------- Angle ---------------------
   float angle = abs(fmod((encoderCounts / CPR) * 360.0, 360.0));
 
+  // ---------------- SAFETY SHUTOFF ----------------
+  if (angle < 120 || angle > 205) {
+     enableDriver(false);
+     
+     integral = 0;
+     prevError = 0;
+     
+     static unsigned long lastPrintFallen = 0;
+     if (millis() - lastPrintFallen > 200) {
+       Serial.print("FALLEN! Ang: "); Serial.println(angle, 2);
+       lastPrintFallen = millis();
+     }
+     return; 
+  }
 
+  enableDriver(true);
+
+  // ---------------- PID -----------------------
   float error = angle - TARGET_ANGLE;
-  error = -error;
 
   integral += error * dt;
   integral = constrain(integral, -5000, 5000);
@@ -104,23 +144,29 @@ void loop() {
   prevError = error;
 
   float pid = Kp * error + Ki * integral + Kd * derivative;
-  
-  Serial.println(angle);
-  // Don't drive outside upright region
-  if (angle < 135 || angle > 225) return;
+   
+  static unsigned long lastPrint = 0;
+  if (millis() - lastPrint > 100) {
+    Serial.print("Ang: ");
+    Serial.print(angle, 2);      
+    Serial.print(" | Err: ");
+    Serial.println(error); 
+    lastPrint = millis();
+  }
 
-  // Motor speed update
   setMotorSpeed(pid);
 
+  // -------------------------------------------------
+  //      ULTRA-FAST NON-BLOCKING STEP GENERATOR
+  // -------------------------------------------------
+  if (motorEnabled) {
+    unsigned long microsNow = micros();
+    if (microsNow - lastStepMicros >= stepInterval) {
+      lastStepMicros = microsNow;
 
-
-  unsigned long microsNow = micros();
-  if (microsNow - lastStepMicros >= stepInterval) {
-    lastStepMicros = microsNow;
-
-    // Fast pulse (2–3 µs)
-    digitalWrite(STEP_PIN, HIGH);
-    delayMicroseconds(2);
-    digitalWrite(STEP_PIN, LOW);
+      digitalWrite(STEP_PIN, HIGH);
+      delayMicroseconds(2);
+      digitalWrite(STEP_PIN, LOW);
+    }
   }
 }
