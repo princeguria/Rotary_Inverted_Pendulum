@@ -134,6 +134,3 @@ speed  = pid                         (steps per second; sign → DIR pin)
 
 ---
 
-# 📜 License
-
-MIT — see [LICENSE](LICENSE).
