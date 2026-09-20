@@ -10,13 +10,6 @@ The project features:
 - A **non-blocking step-pulse generator**
 - A **safety cut-off** that puts the driver to sleep when the pendulum falls
 
----
-
-## 🖼️ Figure 1: The complete Rotary Inverted Pendulum setup
-
-![Pendulum Setup](docs/images/setup.jpg)
-
----
 
 # 🚀 Features
 
@@ -46,13 +39,7 @@ The project features:
 - 2 × 4.7 kΩ pull-up resistors (encoder A and B to 5 V)
 - 100 µF electrolytic capacitor across the driver's VMOT and GND (strongly recommended)
 
----
 
-## 🖼️ Figure 2: Electronics and Wiring Close-Up
-
-![Electronics](docs/images/wiring.jpg)
-
----
 
 # 🔌 Wiring & Connections (Arduino Uno)
 
@@ -150,25 +137,6 @@ speed  = pid                         (steps per second; sign → DIR pin)
 | `SPEED_LIMIT` | 40000 steps/s (clamp) |
 | Safety window | 120° – 205° |
 
-See [docs/TUNING.md](docs/TUNING.md) for the derived pendulum parameters and a step-by-step tuning procedure.
-
----
-
-# 📁 Repository Structure
-
-```
-Rotary_Inverted_Pendulum/
-├── firmware/
-│   └── rotary_pendulum_pid/
-│       └── rotary_pendulum_pid.ino   # Arduino Uno sketch
-├── docs/
-│   ├── TUNING.md                     # Pendulum numbers + tuning guide
-│   └── images/                       # Add setup.jpg and wiring.jpg here
-├── LICENSE
-└── README.md
-```
-
----
 
 # ⚠️ Known Limitations
 
