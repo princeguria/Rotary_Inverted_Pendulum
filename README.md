@@ -11,7 +11,7 @@ The project features:
 - A **safety cut-off** that puts the driver to sleep when the pendulum falls
 
 
-# 🚀 Features
+#  Features
 
 - **PID Stabilization** — Kp / Ki / Kd on the angle error, output used directly as step rate (steps/s).
 - **Interrupt-Driven Encoder** — x4 quadrature decoding (1440 counts/rev, 0.25° per count) using direct `PIND` port reads on pins 2 and 3.
@@ -23,7 +23,7 @@ The project features:
 
 ---
 
-# 🛠️ Hardware Requirements
+# Hardware Requirements
 
 | # | Component | Part | Description | Key specs |
 |---|-----------|------|-------------|-----------|
@@ -35,13 +35,8 @@ The project features:
 | 6 | Pendulum Bob | Custom | Point mass | Mass 11 g, 13.9 cm from pivot |
 | 7 | Power Supply | 12 V adapter / battery | DC supply | 12 V, 1.5 A |
 
-### **Misc**
-- 2 × 4.7 kΩ pull-up resistors (encoder A and B to 5 V)
-- 100 µF electrolytic capacitor across the driver's VMOT and GND (strongly recommended)
 
-
-
-# 🔌 Wiring & Connections (Arduino Uno)
+#  Wiring & Connections (Arduino Uno)
 
 ## **1. Stepper Motor Driver (DRV8825)**
 
@@ -77,35 +72,19 @@ the encoder is powered from a voltage it supports and that its outputs never exc
 
 ---
 
-# 🔍 Noise Reduction (Recommended)
 
-To prevent jitter or false readings:
 
-- Connect a **4.7 kΩ** resistor between Pin **2 → 5 V**
-- Connect a **4.7 kΩ** resistor between Pin **3 → 5 V**
-- Keep encoder wires away from the motor wires, twist the motor coil pairs, and use a common ground
+#  Installation & Usage
 
-(The firmware also enables the Uno's internal pull-ups.)
-
----
-
-# ⚙️ Installation & Usage
-
-### **1. Clone the Repo**
-```bash
-git clone https://github.com/<your-username>/Rotary_Inverted_Pendulum.git
-cd Rotary_Inverted_Pendulum
-```
-
-### **2. Upload the Firmware**
+### **1. Upload the Firmware**
 1. Open `firmware/rotary_pendulum_pid/rotary_pendulum_pid.ino` in the Arduino IDE.
 2. Select **Board: Arduino Uno** and the correct port.
 3. Click **Upload**. No external libraries are needed.
 
-### **3. Set the Driver Current**
+### **2. Set the Driver Current**
 Adjust the DRV8825 Vref before running the motor (`I = 2 × Vref` on Pololu-style boards) according to your motor's rated current.
 
-### **4. Run**
+### **3. Run**
 1. **Power on with the pendulum hanging straight down.** Encoder counts start at 0 on boot, so down = 0° and upright = 180°.
 2. Open the Serial Monitor at **115200 baud**.
 3. Slowly raise the pendulum to upright. The driver wakes up when the angle enters **120°–205°** and PID takes over.
@@ -120,7 +99,7 @@ Ang: 179.75 | Err: -0.25
 
 ---
 
-# 🎛️ Controller
+# Controller
 
 ```
 error  = angle - TARGET_ANGLE        (degrees, TARGET_ANGLE = 180)
@@ -138,7 +117,7 @@ speed  = pid                         (steps per second; sign → DIR pin)
 | Safety window | 120° – 205° |
 
 
-# ⚠️ Known Limitations
+#  Known Limitations
 
 - **No swing-up** — the pendulum must be lifted by hand.
 - **Step rate is limited by loop time** — one step is sent per `loop()` pass, so `SPEED_LIMIT` is a clamp, not a guarantee.
@@ -147,7 +126,7 @@ speed  = pid                         (steps per second; sign → DIR pin)
 
 ---
 
-# 🗺️ Roadmap
+#  Roadmap
 
 - Energy-based swing-up
 - State-feedback (LQR) balancing
